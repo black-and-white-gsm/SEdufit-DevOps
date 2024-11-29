@@ -28,7 +28,29 @@ resource "aws_lambda_function" "callback_lambda" {
 
   environment {
     variables = {
-      CALLBACK_LAMBDA_FUNCTION_NAME = aws_lambda_function.callback_lambda.function_name
+      TEXT_TO_IMAGE_S3_BUCKET_NAME  = aws_s3_bucket.text_to_image.id
+      AWS_REGION_NAME               = var.aws_region
+    }
+  }
+}
+
+data "aws_lambda_function" "callback_lambda" {
+  function_name = aws_lambda_function.callback_lambda.function_name
+}
+
+resource "aws_lambda_function" "callback_lambda_v2" {
+  filename      = "./src/callback.zip"
+  function_name = "callback-lambda"
+  role          = aws_iam_role.callback_lambda_role.arn
+  handler       = "callback.lambda_handler"
+  runtime       = "python3.12"
+  timeout       = 480
+  memory_size   = 1024
+  layers        = [aws_lambda_layer_version.lambda_layer.arn]
+
+  environment {
+    variables = {
+      CALLBACK_LAMBDA_FUNCTION_NAME = data.aws_lambda_function.callback_lambda.function_name
       TEXT_TO_IMAGE_S3_BUCKET_NAME  = aws_s3_bucket.text_to_image.id
       AWS_REGION_NAME               = var.aws_region
     }
